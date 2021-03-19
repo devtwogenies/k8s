@@ -9,15 +9,16 @@ cat >>/etc/hosts<<EOF
 EOF
 
 # Install docker from Docker-ce repository
-echo "[TASK 2] Install docker container engine"
+echo "[TASK 2] Install containerd"
 yum install -y -q yum-utils device-mapper-persistent-data lvm2 > /dev/null 2>&1
 yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo > /dev/null 2>&1
-yum install -y -q docker-ce >/dev/null 2>&1
+yum install -y -q containerd >/dev/null 2>&1
 
-# Enable docker service
-echo "[TASK 3] Enable and start docker service"
-systemctl enable docker >/dev/null 2>&1
-systemctl start docker
+# Enable containerd service
+echo "[TASK 3] Enable and start containerd service"
+sed -i --follow-symlinks 's/^disabled_plugins/#&/' /etc/containerd/config.toml
+systemctl enable containerd >/dev/null 2>&1
+systemctl start containerd
 
 # Disable SELinux
 echo "[TASK 4] Disable SELinux"
@@ -31,11 +32,11 @@ systemctl stop firewalld
 
 # Add sysctl settings
 echo "[TASK 6] Add sysctl settings"
-cat >>/etc/sysctl.d/kubernetes.conf<<EOF
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-EOF
-sysctl --system >/dev/null 2>&1
+modprobe br_netfilter
+echo 1 > /proc/sys/net/bridge/bridge-nf-call-iptables
+echo 1 > /proc/sys/net/bridge/bridge-nf-call-ip6tables
+echo 1 > /proc/sys/net/ipv4/ip_forward
+sudo sysctl -p
 
 # Disable swap
 echo "[TASK 7] Disable and turn off SWAP"
@@ -57,11 +58,17 @@ EOF
 
 # Install Kubernetes
 echo "[TASK 9] Install Kubernetes (kubeadm, kubelet and kubectl)"
-yum install -y -q kubeadm kubelet kubectl >/dev/null 2>&1
+yum install -y -q kubeadm kubelet kubectl iproute-tc >/dev/null 2>&1
 
 # Start and Enable kubelet service
 echo "[TASK 10] Enable and start kubelet service"
 systemctl enable kubelet >/dev/null 2>&1
+sudo mkdir -p  /etc/systemd/system/kubelet.service.d/
+cat << EOF | sudo tee  /etc/systemd/system/kubelet.service.d/0-containerd.conf
+[Service]                                                 
+Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --runtime-request-timeout=15m --container-runtime-endpoint=unix:///run/containerd/containerd.sock"
+EOF
+sudo systemctl daemon-reload >/dev/null 2>&1
 systemctl start kubelet >/dev/null 2>&1
 
 # Enable ssh password authentication

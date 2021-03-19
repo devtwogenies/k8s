@@ -1,9 +1,8 @@
-
 #!/bin/bash
 
 # Initialize Kubernetes
 echo "[TASK 1] Initialize Kubernetes Cluster"
-kubeadm init --apiserver-advertise-address=192.168.10.10 --pod-network-cidr=10.244.0.0/16 >> /root/kubeinit.log 2>/dev/null
+kubeadm init --cri-socket /run/containerd/containerd.sock --apiserver-advertise-address=192.168.10.10 --pod-network-cidr=10.244.0.0/16 >> /root/kubeinit.log 2>/dev/null
 
 # Copy Kube admin config
 echo "[TASK 2] Copy kube admin config to Vagrant user .kube directory"
@@ -27,10 +26,15 @@ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manife
 kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)" >/dev/null 2>&1
 
 echo "[TASK 6] Install k9s, mc, nano"
-curl -L https://github.com/derailed/k9s/releases/download/v0.23.10/k9s_Linux_x86_64.tar.gz -o k9s_Linux_x86_64.tar.gz >/dev/null 2>&1
+curl -L https://github.com/derailed/k9s/releases/download/v0.24.2/k9s_Linux_x86_64.tar.gz -o k9s_Linux_x86_64.tar.gz >/dev/null 2>&1
 tar -zxvf  k9s_Linux_x86_64.tar.gz k9s >/dev/null 2>&1
 sudo cp k9s /usr/bin >/dev/null 2>&1 
-sudo yum install mc nano -y
+sudo yum install mc nano bash-completion -y
+
+kubectl completion bash >/etc/bash_completion.d/kubectl
+echo 'source <(kubectl completion bash)' >> ~/.bashrc
+echo 'alias k=kubectl' >>~/.bashrc
+echo 'complete -F __start_kubectl k' >>~/.bashrc
 
 # Generate Cluster join command
 echo "[TASK 7] Generate and save cluster join command to /joincluster.sh"
