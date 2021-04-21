@@ -6,6 +6,7 @@ cat >>/etc/hosts<<EOF
 192.168.10.10 kmaster.example.com kmaster
 192.168.10.11 kworker1.example.com kworker1
 192.168.10.12 kworker2.example.com kworker2
+192.168.10.13 file-server.local file-server
 EOF
 
 # Install docker from Docker-ce repository
@@ -37,6 +38,8 @@ echo 1 > /proc/sys/net/bridge/bridge-nf-call-iptables
 echo 1 > /proc/sys/net/bridge/bridge-nf-call-ip6tables
 echo 1 > /proc/sys/net/ipv4/ip_forward
 sudo sysctl -p
+sudo modprobe ip_tables
+sudo echo 'ip_tables' >> /etc/modules
 
 # Disable swap
 echo "[TASK 7] Disable and turn off SWAP"

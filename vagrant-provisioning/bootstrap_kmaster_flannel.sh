@@ -26,7 +26,7 @@ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manife
 kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)" >/dev/null 2>&1
 
 echo "[TASK 6] Install k9s, mc, nano"
-curl -L https://github.com/derailed/k9s/releases/download/v0.24.2/k9s_Linux_x86_64.tar.gz -o k9s_Linux_x86_64.tar.gz >/dev/null 2>&1
+curl -L https://github.com/derailed/k9s/releases/download/v0.24.7/k9s_Linux_x86_64.tar.gz -o k9s_Linux_x86_64.tar.gz >/dev/null 2>&1
 tar -zxvf  k9s_Linux_x86_64.tar.gz k9s >/dev/null 2>&1
 sudo cp k9s /usr/bin >/dev/null 2>&1 
 sudo yum install mc nano bash-completion -y
